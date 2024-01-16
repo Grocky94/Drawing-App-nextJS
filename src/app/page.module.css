@@ -1,0 +1,24 @@
+/* 
+.body {
+  height: 100%;
+  width: 100%;
+  border: 1px solid #000;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  /* Add other styles as needed */
+/* } */
+
+/* .canvas {
+  border: 1px solid black;
+  height: 650px; /* Adjust the height as needed */
+/* width: 650px; */
+
+/* Adjust the width as needed */
+/* border-radius: 10px; */
+/* }  */
+.colorpick {
+  height: 10px;
+  width: 100%;
+  /* border: 1px solid black; */
+}
