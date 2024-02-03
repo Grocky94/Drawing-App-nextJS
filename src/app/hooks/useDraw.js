@@ -1,12 +1,16 @@
 import { useEffect, useRef, useState } from 'react';
 
 export const useDraw = (onDraw) => {
-  const [mouseDown, setMouseDown] = useState(false);
+  const [drawing, setDrawing] = useState(false);
 
   const canvasRef = useRef(null);
   const prevPoint = useRef(null);
 
-  const onMouseDown = () => setMouseDown(true);
+  const startDrawing = () => setDrawing(true);
+  const stopDrawing = () => {
+    setDrawing(false);
+    prevPoint.current = null;
+  };
 
   const clear = () => {
     const canvas = canvasRef.current;
@@ -19,8 +23,11 @@ export const useDraw = (onDraw) => {
   };
 
   useEffect(() => {
-    const handler = (e) => {
-      if (!mouseDown) return;
+    const drawHandler = (e) => {
+      if (!drawing) return;
+
+      e.preventDefault(); // Prevent scrolling on touch devices
+
       const currentPoint = computePointInCanvas(e);
 
       const ctx = canvasRef.current?.getContext('2d');
@@ -35,27 +42,38 @@ export const useDraw = (onDraw) => {
       if (!canvas) return;
 
       const rect = canvas.getBoundingClientRect();
-      const x = e.clientX - rect.left;
-      const y = e.clientY - rect.top;
+      let x, y;
+      if (e.type.startsWith('touch')) {
+        x = e.touches[0].clientX - rect.left;
+        y = e.touches[0].clientY - rect.top;
+      } else {
+        x = e.clientX - rect.left;
+        y = e.clientY - rect.top;
+      }
 
       return { x, y };
     };
 
-    const mouseUpHandler = () => {
-      setMouseDown(false);
-      prevPoint.current = null;
-    };
+    // Add event listeners for both mouse and touch events
+    canvasRef.current?.addEventListener('mousedown', startDrawing);
+    canvasRef.current?.addEventListener('mousemove', drawHandler);
+    window.addEventListener('mouseup', stopDrawing);
 
-    // Add event listeners
-    canvasRef.current?.addEventListener('mousemove', handler);
-    window.addEventListener('mouseup', mouseUpHandler);
+    canvasRef.current?.addEventListener('touchstart', startDrawing);
+    canvasRef.current?.addEventListener('touchmove', drawHandler);
+    window.addEventListener('touchend', stopDrawing);
 
     // Remove event listeners
     return () => {
-      canvasRef.current?.removeEventListener('mousemove', handler);
-      window.removeEventListener('mouseup', mouseUpHandler);
-    };
-  }, [onDraw]);
+      canvasRef.current?.removeEventListener('mousedown', startDrawing);
+      canvasRef.current?.removeEventListener('mousemove', drawHandler);
+      window.removeEventListener('mouseup', stopDrawing);
 
-  return { canvasRef, onMouseDown, clear };
+      canvasRef.current?.removeEventListener('touchstart', startDrawing);
+      canvasRef.current?.removeEventListener('touchmove', drawHandler);
+      window.removeEventListener('touchend', stopDrawing);
+    };
+  }, [onDraw, drawing]);
+
+  return { canvasRef, clear };
 };
